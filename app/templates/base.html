@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<!-- meta section -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- page config section -->
+	<title>Hệ thống quản lý chuyến bay.</title>
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+
+	<!-- css section -->
+	<link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
+
+	<!-- jquery section -->
+	<script src="{{url_for('static', filename='js/jquery-3.6.0.min.js')}} "></script>
+	 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+	<div class="header">
+		<h1>HỆ THỐNG QUẢN LÝ CHUYỂN BAY</h1>
+	</div>
+
+	<ul class="menu">
+		<li><a class="{{ 'active' if active_page == 'home' else '' }}" href="{{url_for('home')}}">Trang Chủ</a></li>
+		<li><a class="{{ 'active' if active_page == 'book_tickets' else '' }}" href="{{url_for('book_tickets')}}">Đặt
+				Vé</a></li>
+		<li><a class="{{ 'active' if active_page == 'ticket_sales' else '' }}" href="{{url_for('ticket_sales')}}">Bán Vé</a></li>
+		<li><a class="{{ 'active' if active_page == 'admin' else '' }}" href="/admin">Quản Lý</a></li>
+		<li><a class="{{ 'active' if active_page == 'report' else '' }}" href="{{url_for('report')}}">Thông Kê Báo Cáo</a></li>
+		<li><a class="{{ 'hidden' if current_user.is_authenticated == true else 'active' if active_page == 'login' else '' }}" href="{{url_for('login')}}">Đăng Nhập</a></li>
+		<li><a class="{{ '' if current_user.is_authenticated == true else 'hidden' }}" href="{{url_for('logout')}}">Đăng Xuất</a></li>
+	</ul>
+
+	<div class="main">
+
+		{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<section class="section-message">
+			<ul class="flashes">
+				{% for message in messages %}
+				<li>{{ message }}</li>
+				{% endfor %}
+			</ul>
+		</section>
+		{% endif %}
+		{% endwith %}
+
+		{% block content %}
+		{% endblock %}
+	</div>
+
+	<div class="footer">
+		<p>Bản quyền © 2023 Nhóm 16.</p>
+	</div>
+
+</body>
+
+</html>
