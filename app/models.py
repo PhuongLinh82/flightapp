@@ -28,8 +28,8 @@ class Route(db.Model):   #tuyen bay
     departure_id = Column(Integer, ForeignKey(Airport.id), nullable=False)
     destination_id = Column(Integer, ForeignKey(Airport.id), nullable=False)
 
-    routefk1 = relationship("Airport", foreign_keys=[departure_id])
-    routefk2 = relationship("Airport", foreign_keys=[destination_id])
+    departure = relationship("Airport", foreign_keys=[departure_id])
+    destination = relationship("Airport", foreign_keys=[destination_id])
 
 class Flight(db.Model):    #chuyen bay
     __tablename__ = "flight"
@@ -45,17 +45,17 @@ class Flight(db.Model):    #chuyen bay
     unitPriceOfClassFirstSeat = Column(Float, nullable=False)
     unitPriceOfClassSecondSeat = Column(Float, nullable=False)
 
-    flights = relationship("Route", foreign_keys=[route_id])
+    route = relationship("Route", foreign_keys=[route_id])
     transits = relationship("Flight_Transit", backref="flight")
 
 
 class Transit(db.Model):  #san bay trung gian
     __tablename__ = "transit"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    stopTime = Column(String(20), nullable=False)
+    duration = Column(String(20), nullable=False)
     airport_id = Column(Integer, ForeignKey("airport.id"), nullable=False)
 
-    airportfk = relationship("Airport", foreign_keys=[airport_id])
+    airport = relationship("Airport", foreign_keys=[airport_id])
     #flights = relationship("Flight_Transit", backref="transit")
 
 
@@ -111,9 +111,6 @@ class User(db.Model, UserMixin):
     active = Column(Boolean, default=True)
     user_role = Column(Enum(UserRole), default=UserRole.STAFF)
 
-
-    def __str__(self):
-        return f"User(id='{self.id}', active={self.active}, username={self.username}, password={self.password}, user_role={self.user_role})"
 
 if __name__ == '__main__':
     with flightapp.app_context():
@@ -266,10 +263,10 @@ if __name__ == '__main__':
         db.session.commit()
 
         transits = [
-            Transit(airport_id=4, stopTime="00:20:00"),
-            Transit(airport_id=9, stopTime="00:30:00"),
-            Transit(airport_id=6, stopTime="00:25:00"),
-            Transit(airport_id=5, stopTime="00:20:00"),
+            Transit(airport_id=4, duration="00:20:00"),
+            Transit(airport_id=9, duration="00:30:00"),
+            Transit(airport_id=6, duration="00:25:00"),
+            Transit(airport_id=5, duration="00:20:00"),
            
         ]
         db.session.add_all(transits)
@@ -299,8 +296,8 @@ if __name__ == '__main__':
         db.session.commit()
 
         users = [
-            User(name='Tuấn', username='ndtuan', password='12345!fra', active=True, user_role=UserRole.ADMIN),
-            User(name='Hoa', username='ltkhoa', password='12345!fra', active=True, user_role=UserRole.STAFF),
+            User(name='Tuấn', username='ndtuan', password=str(hashlib.md5('12345!fra'.encode('utf-8')).hexdigest()), active=True, user_role=UserRole.ADMIN),
+            User(name='Hoa', username='ltkhoa', password=str(hashlib.md5('12345!fra'.encode('utf-8')).hexdigest()), active=True, user_role=UserRole.STAFF),
         ]
         db.session.add_all(users)
         db.session.commit()

@@ -4,8 +4,9 @@ from app import db, flightapp
 from app.models import Airport, Route, Flight, Transit, Flight_Transit, User, UserRole
 from flask_admin.contrib.sqla import ModelView
 from flask_wtf import FlaskForm
-from wtforms import DateField, FloatField, SelectField, StringField
+from wtforms import DateField, FloatField, SelectField, StringField, IntegerField
 from wtforms.validators import DataRequired
+from wtforms_sqlalchemy.fields import QuerySelectField
 from flask_admin import BaseView, expose, AdminIndexView
 from flask_login import logout_user, current_user
 
@@ -17,6 +18,19 @@ class AuthenticatedView(ModelView):
 
 
 """*===FLIGHT===*"""
+class FlightForm(FlaskForm):
+    name = StringField('Mã chuyến bay', validators=[DataRequired()])
+    numberOfClassFirstSeat = IntegerField('Số lượng ghế hạng 1', validators=[DataRequired()])
+    numberOfClassSecondSeat = IntegerField('Số lượng ghế hạng 2', validators=[DataRequired()])
+    departure_time = DateField('Ngày giờ khởi hành', format='%Y-%m-%d', validators=[DataRequired()])
+    destination_time = DateField('Ngày giờ đến', format='%Y-%m-%d', validators=[DataRequired()])
+    availableClassFirstSeat = IntegerField('Số lượng ghế hạng 1 còn trống', validators=[DataRequired()])
+    availableClassSecondSeat = IntegerField('Số lượng ghế hạng 2 còn trống', validators=[DataRequired()])
+    route = QuerySelectField('Tên tuyến bay', query_factory=lambda: Route.query.all(), get_label='name', validators=[DataRequired()])
+    unitPriceOfClassFirstSeat = FloatField('Đơn giá ghế hạng 1', validators=[DataRequired()])
+    unitPriceOfClassSecondSeat = FloatField('Đơn giá ghế hạng 2', validators=[DataRequired()])
+
+
 class FlightView(AuthenticatedView):
     can_edit = True
     can_create = True
@@ -27,22 +41,23 @@ class FlightView(AuthenticatedView):
     column_searchable_list = ['name']
     column_filters = ['name']
     column_list = ['id', 'name', 'numberOfClassFirstSeat', 'numberOfClassSecondSeat', 'departure_time', 'destination_time', 'availableClassFirstSeat',
-                   'availableClassSecondSeat', 'flights.name', 'unitPriceOfClassFirstSeat', 'unitPriceOfClassSecondSeat']
-    form_columns = ['name', 'numberOfClassFirstSeat', 'numberOfClassSecondSeat', 'departure_time', 'destination_time',
-                   'route_id', 'unitPriceOfClassFirstSeat', 'unitPriceOfClassSecondSeat']
+                   'availableClassSecondSeat', 'route.name', 'unitPriceOfClassFirstSeat', 'unitPriceOfClassSecondSeat']
     column_labels = {
         'id': 'Mã chuyến bay',
         'name': 'Tên chuyến bay',
         'numberOfClassFirstSeat': 'Số lượng ghế hạng 1',
         'numberOfClassSecondSeat': 'Số lượng ghế hạng 2',
-        'availableClassFirstSeat': 'Số ghế hạng 1 còn trống',
-        'availableClassSecondSeat': 'Số ghế hạng 2 còn trống',
         'departure_time': 'Ngày giờ khởi hành',
         'destination_time': 'Ngày giờ đến',
-        'flights.name': 'Tên tuyến bay',
+        'availableClassFirstSeat': 'Số ghế hạng 1 còn trống',
+        'availableClassSecondSeat': 'Số ghế hạng 2 còn trống',
+        'route.name': 'Tên tuyến bay',
         'unitPriceOfClassFirstSeat': 'Đơn giá ghế hạng 1',
         'unitPriceOfClassSecondSeat': 'Đơn giá ghế hạng 2',
     }
+    page_size = 50
+
+    form = FlightForm
 
 class FormSearchFlight(FlaskForm):
     with flightapp.app_context():
@@ -53,18 +68,11 @@ class FormSearchFlight(FlaskForm):
         departure_date = DateField('Departure date', format='%Y-%m-%d', validators=[DataRequired()])
 
 
-
-"""
-class TransitForm(FlaskForm):
-    stopTime = StringField("Thời gian chờ", validators=[DataRequired()])
-    airportName = SelectField("Tên sân bay", validators=[DataRequired()], coerce=int)
-
-    def __init__(self, *args, **kwargs):
-        super(TransitForm, self).__init__(*args, **kwargs)
-        self.airportName.choices = [(airport.id, airport.name) for airport in Airport.query.all()]
-"""
-
 """*===TRANSIT===*"""
+class TransitForm(FlaskForm):
+    duration = StringField('Thời gian dừng', validators=[DataRequired()])
+    airport = QuerySelectField('Tên sân bay', query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
+
 class TransitView(AuthenticatedView):
     can_edit = True
     can_create = True
@@ -72,35 +80,25 @@ class TransitView(AuthenticatedView):
     column_display_pk = True
     can_view_details = True
     can_export = True
-    #column_searchable_list = ['name']
-    #column_filters = ['name']
-    column_list = ['id', 'stopTime', 'airportfk.id', 'airportfk.name']
-    form_columns = ['stopTime', 'airport_id']
-    #form = TransitForm
-
-    """
-    def edit_form(self, obj):
-        form = super(TransitView, self).edit_form(obj=obj)
-        form.stopTime.default = obj.stopTime
-        form.airportName.default = obj.airportfk.id
-        form.process()
-        return form
-    """
+    column_searchable_list = ['airport.name']
+    column_filters = ['airport.name']
+    column_list = ['id', 'duration', 'airport.id', 'airport.name']
     column_labels = {
         'id': 'Mã sân bay trung gian',
-        'stopTime': 'Thời gian dừng',
-        'airportfk.id': 'Mã sân bay',
-        'airportfk.name': 'Tên sân bay',
+        'duration': 'Thời gian dừng',
+        'airport.id': 'Mã sân bay',
+        'airport.name': 'Tên sân bay',
     }
+    page_size = 50
+
+    form = TransitForm
+
 
 """*===ROUTE===*"""
-"""
 class RouteForm(FlaskForm):
-    name = StringField("Tên tuyến bay", validators=[DataRequired()])
-    routefk1 = SelectField("Sân bay khởi hành", query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
-    routefk2 = SelectField("Sân bay đích đến", query_factory=lambda: Airport.query.all(), get_label='name',
-                               validators=[DataRequired()])
-"""
+    name = StringField('Tên tuyến bay', validators=[DataRequired()])
+    departure = QuerySelectField('Sân bay xuất phát', query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
+    destination = QuerySelectField('Sân bay đích', query_factory=lambda: Airport.query.all(), get_label='name', validators=[DataRequired()])
 
 
 class RouteView(AuthenticatedView):
@@ -110,19 +108,19 @@ class RouteView(AuthenticatedView):
     column_display_pk = True
     can_view_details = True
     can_export = True
-    column_searchable_list = ['name']
-    column_filters = ['name']
-    column_list = ['id', 'name', 'routefk1.name', 'routefk2.name']
-    form_columns = ['name', 'departure_id', 'destination_id']
+    column_searchable_list = ['name', 'departure_id', 'destination_id']
+    column_filters = ['name', 'departure_id', 'destination_id']
+    column_list = ['id', 'name', 'departure.name', 'destination.name']
     column_labels = {
         'id': 'Mã tuyến bay',
         'name': 'Tên tuyến bay',
-        'routefk1.name': 'Sân bay khởi hành',
-        'routefk2.name': 'Sân bay đích đến'
+        'departure.name': 'Sân bay khởi hành',
+        'destination.name': 'Sân bay đích đến'
     }
-    #page_size = 50
+    #form_columns = ['name', 'departure_id', 'destination_id']
+    page_size = 50
 
-    #form = RouteForm
+    form = RouteForm
 
 
 """*===AIRPORT===*"""
@@ -142,6 +140,29 @@ class AirportView(AuthenticatedView):
         'name': 'Tên sân bay',
         'address': 'Địa chỉ'
     }
+    page_size = 50
+
+
+"""*===USER===*"""
+class UserView(AuthenticatedView):
+    can_edit = True
+    can_create = True
+    can_delete = True
+    column_display_pk = True
+    can_view_details = True
+    can_export = True
+    column_searchable_list = ['name']
+    column_filters = ['name']
+    column_list = ['id', 'name', 'username', 'password', 'active', 'user_role']
+    form_columns = ['name', 'username', 'password', 'user_role']
+    column_labels = {
+        'name': 'Tên',
+        'username': 'Tên người dùng',
+        'password': 'Mật khẩu',
+        'active': 'Trạng thái',
+        'user_role': 'Vai trò'
+    }
+
 
 """*===LOGOUT===*"""
 class LogoutView(BaseView):
@@ -152,7 +173,6 @@ class LogoutView(BaseView):
 
     def is_accessible(self):
         return current_user.is_authenticated
-
 
 
 """*===ADMIN===*"""
@@ -167,9 +187,11 @@ class AdminView(AdminIndexView):
 
 
 
-admin = Admin(app=flightapp, name='HỆ THỐNG QUẢN LÝ CHUYẾN BAY', template_mode='bootstrap4', index_view='')
+admin = Admin(app=flightapp, name='HỆ THỐNG QUẢN LÝ CHUYẾN BAY', template_mode='bootstrap4')
+index_view = AdminView(name="Trang chủ")
 admin.add_view(AirportView(Airport, db.session, name="Sân bay"))
 admin.add_view(TransitView(Transit, db.session, name="Sân bay trung gian"))
 admin.add_view(RouteView(Route, db.session, name="Tuyến bay"))
 admin.add_view(FlightView(Flight, db.session, name="Chuyến bay"))
+admin.add_view(UserView(User, db.session, name="Nguời dùng"))
 admin.add_view(LogoutView(name='Đăng xuất'))

@@ -8,7 +8,6 @@ from datetime import datetime, time, timedelta
 from app.models import UserRole, Customer, Ticket
 from app import flightapp, login_manager
 from sqlalchemy import and_, or_, func
-
 from app.models import db
 
 
@@ -24,9 +23,9 @@ def login():
     if request.method == 'POST':
         username = request.form.get("username")
         password = request.form.get("password")
-        # spassword = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
         user = User.query.filter(User.username.__eq__(username.strip()),
                                  User.password.__eq__(password)).first()
+
         print(user)
 
         if user:
